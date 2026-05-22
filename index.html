@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#04080f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pilot Nav">
+<link rel="manifest" href="manifest.json">
+<title>Pilot Navigation</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+body{
+  min-height:100vh;background:#04080f;
+  font-family:'Courier New',monospace;color:#c8dff0;
+  display:flex;flex-direction:column;align-items:center;
+  padding:max(env(safe-area-inset-top),10px) 10px max(env(safe-area-inset-bottom),14px);
+  gap:8px;
+}
+.hdr{text-align:center;}
+.hdr-sub{font-size:11px;letter-spacing:4px;color:#3af;text-transform:uppercase;margin-bottom:2px;}
+.hdr-title{font-size:20px;font-weight:900;letter-spacing:3px;color:#fff;text-shadow:0 0 16px #3af9;}
+
+/* TOP CARDS — 2x2 grid */
+.top-cards{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:460px;}
+.card{
+  background:linear-gradient(135deg,#081524,#0b1e30);
+  border:1px solid #1a3a5c;border-radius:12px;
+  padding:12px 10px;text-align:center;
+  box-shadow:0 3px 14px #0005,inset 0 1px 0 #ffffff06;
+}
+.card-lbl{font-size:13px;letter-spacing:3px;color:#4af;margin-bottom:2px;font-weight:700;}
+.card-val{font-size:38px;font-weight:900;line-height:1;color:#1e3a52;transition:color .3s;}
+.card-val.on-spd{color:#3effa0;text-shadow:0 0 14px #3effa055;}
+.card-val.on-brg{color:#ffe066;text-shadow:0 0 14px #ffe06644;}
+.card-unit{font-size:11px;color:#6a9ab0;margin-top:3px;letter-spacing:2px;}
+.card-sub{font-size:13px;color:#ffe066;margin-top:2px;letter-spacing:2px;font-weight:700;}
+/* avg speed sub-label */
+.spd-avg{font-size:11px;color:#5aaa80;margin-top:3px;letter-spacing:1px;}
+
+/* POSITION */
+.pos-card{
+  background:linear-gradient(135deg,#081524,#0b1e30);
+  border:1px solid #1a3a5c;border-radius:12px;
+  padding:10px 14px;width:100%;max-width:460px;
+  display:flex;justify-content:space-around;
+}
+.pos-item{text-align:center;}
+.pos-lbl{font-size:12px;letter-spacing:3px;color:#4af;margin-bottom:3px;font-weight:700;}
+.pos-val{font-size:14px;font-weight:700;color:#c8dff0;letter-spacing:1px;}
+
+/* HEADING INPUT */
+.hdg-card{
+  background:linear-gradient(135deg,#081524,#0b1e30);
+  border:1px solid #1a3a5c;border-radius:12px;
+  padding:10px 14px;width:100%;max-width:460px;
+  display:flex;align-items:center;gap:8px;
+}
+.hdg-lbl{font-size:13px;letter-spacing:3px;color:#4af;font-weight:700;flex:1;}
+.hdg-input{
+  background:#050e1c;border:1px solid #2a5a8a;border-radius:8px;
+  color:#ffe066;font-size:20px;font-weight:900;
+  font-family:'Courier New',monospace;
+  width:76px;padding:7px 8px;text-align:center;outline:none;
+}
+.hdg-unit{font-size:13px;color:#6a9ab0;}
+.btn-sm{
+  border-radius:8px;font-family:'Courier New',monospace;
+  cursor:pointer;font-size:12px;letter-spacing:1px;
+  padding:8px 12px;border:none;font-weight:700;
+}
+.btn-set{background:#1a4a7a;color:#e0f0ff;}
+.btn-clr{background:transparent;border:1px solid #2a3a5a !important;color:#5a8aaa;display:none;}
+
+/* DISPLAY MODE */
+.mode-card{
+  background:linear-gradient(135deg,#081524,#0b1e30);
+  border:1px solid #1a3a5c;border-radius:12px;
+  padding:10px 14px;width:100%;max-width:460px;
+  display:flex;align-items:center;gap:8px;
+}
+.mode-lbl{font-size:13px;letter-spacing:2px;color:#4af;font-weight:700;flex:1;}
+.mode-btns{display:flex;gap:6px;}
+.mode-btn{
+  border-radius:8px;font-family:'Courier New',monospace;
+  cursor:pointer;font-size:11px;letter-spacing:1px;font-weight:700;
+  padding:8px 13px;border:1px solid #2a4a6a;
+  background:#081524;color:#5a8aaa;transition:all .2s;
+}
+.mode-btn.active{background:#1a3a6a;border-color:#4af;color:#4af;box-shadow:0 0 8px #4af4;}
+
+/* SHIP DIAGRAM */
+.ship-section{
+  width:100%;max-width:460px;
+  background:linear-gradient(135deg,#050c18,#081524);
+  border:1px solid #1a3a5c;border-radius:14px;
+  padding:10px;
+  box-shadow:0 4px 18px #0007,inset 0 1px 0 #ffffff04;
+}
+.ship-section-title{
+  font-size:12px;letter-spacing:3px;color:#4af;
+  text-align:center;margin-bottom:6px;font-weight:700;
+}
+
+/* ACCURACY */
+.acc-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:460px;}
+.acc-box{background:#081524;border:1px solid #1a3a5c;border-radius:10px;padding:9px 10px;text-align:center;}
+.acc-box.warn{border-color:#cc3333;}
+.acc-lbl{font-size:12px;letter-spacing:2px;color:#4af;margin-bottom:3px;font-weight:700;}
+.acc-box.warn .acc-lbl{color:#f66;}
+.acc-val{font-size:15px;font-weight:700;color:#c8dff0;}
+.acc-box.warn .acc-val{color:#f88;}
+
+.timeout-banner{
+  background:#1a1000;border:1px solid #aa7700;border-radius:9px;
+  padding:8px 13px;font-size:12px;color:#ffcc44;
+  width:100%;max-width:460px;text-align:center;display:none;letter-spacing:1px;
+}
+.banner{
+  border-radius:9px;padding:8px 13px;font-size:12px;
+  letter-spacing:1px;width:100%;max-width:460px;
+  text-align:center;display:none;
+}
+.warn-banner{background:#1a0808;border:1px solid #aa3333;color:#ff8888;}
+
+/* CONTROLS */
+.controls{display:flex;gap:9px;width:100%;max-width:460px;}
+.btn-main{
+  flex:1;border-radius:12px;border:none;
+  font-size:13px;font-weight:700;letter-spacing:3px;
+  padding:14px;cursor:pointer;font-family:'Courier New',monospace;
+}
+.btn-start{background:linear-gradient(135deg,#0d4a2a,#0a6438);color:#3effa0;}
+.btn-stop{background:linear-gradient(135deg,#4a0d0d,#6a1010);color:#ff8866;}
+.btn-reset{
+  background:#081524;border:1px solid #1e3a5a;
+  border-radius:12px;color:#5a9ab0;
+  font-size:11px;letter-spacing:2px;
+  padding:14px;cursor:pointer;font-family:'Courier New',monospace;
+}
+.status-row{
+  display:flex;align-items:center;gap:7px;
+  font-size:11px;letter-spacing:2px;color:#3a5a72;
+}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#1e3a52;flex-shrink:0;}
+.status-dot.on{background:#3effa0;box-shadow:0 0 6px #3effa0;animation:pulse 1.5s infinite;}
+.status-dot.warn{background:#ffcc44;box-shadow:0 0 6px #ffcc44;animation:pulse 0.8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-sub">Pilot Navigation System</div>
+  <div class="hdr-title">BERTHING MONITOR</div>
+</div>
+
+<!-- Speed + Bearing (2×2) -->
+<div class="top-cards">
+  <!-- Instant Speed -->
+  <div class="card">
+    <div class="card-lbl">SPEED</div>
+    <div class="card-val" id="spdVal">0.0</div>
+    <div class="card-unit">KNOTS (10s AVG)</div>
+    <div class="spd-avg" id="spdAvg">10s AVG: -- kn</div>
+  </div>
+  <!-- Bearing from Pilot -->
+  <div class="card">
+    <div class="card-lbl">BEARING</div>
+    <div class="card-val" id="brgVal">---</div>
+    <div class="card-unit">° TRUE</div>
+    <div class="card-sub" id="brgCard">--</div>
+  </div>
+</div>
+
+<!-- Position -->
+<div class="pos-card">
+  <div class="pos-item">
+    <div class="pos-lbl">LATITUDE</div>
+    <div class="pos-val" id="latVal">--° --.- '</div>
+  </div>
+  <div class="pos-item">
+    <div class="pos-lbl">LONGITUDE</div>
+    <div class="pos-val" id="lonVal">--° --.- '</div>
+  </div>
+</div>
+
+<!-- Vessel Heading -->
+<div class="hdg-card">
+  <div class="hdg-lbl">VESSEL HDG</div>
+  <input type="number" class="hdg-input" id="hdgInput" min="0" max="360" placeholder="000">
+  <span class="hdg-unit">°</span>
+  <button class="btn-sm btn-set" onclick="applyHeading()">SET</button>
+  <button class="btn-sm btn-clr" id="clrBtn" onclick="clearHeading()">CLR</button>
+</div>
+
+<!-- Display Mode -->
+<div class="mode-card">
+  <div class="mode-lbl">DISPLAY MODE</div>
+  <div class="mode-btns">
+    <button class="mode-btn active" id="btnNorthUp" onclick="setMode('north')">↑N NORTH UP</button>
+    <button class="mode-btn"        id="btnHeadUp"  onclick="setMode('head')">↑HDG HEAD UP</button>
+  </div>
+</div>
+
+<!-- Ship Diagram -->
+<div class="ship-section">
+  <div class="ship-section-title" id="diagramTitle">VESSEL PLAN VIEW · NORTH UP · SPEED &amp; BEARING VECTOR</div>
+  <div style="display:flex;justify-content:center;">
+    <!--
+      SVG 300×300. Compass center (150,150).
+      Vessel: length 60px (120m scale), beam 10px (20m).
+      Bow UP (−y). Bow tip y=120, stern y=180.
+      Pilot at 90m from bow = 45px from bow → y=120+45=165.
+    -->
+    <svg id="shipSvg" viewBox="0 0 300 300" width="100%" style="max-width:300px;display:block;">
+      <rect width="300" height="300" fill="#04080f" rx="10"/>
+
+      <!-- Compass rings -->
+      <circle cx="150" cy="150" r="130" fill="none" stroke="#0d2035" stroke-width="1"/>
+      <circle cx="150" cy="150" r="95"  fill="none" stroke="#0a1825" stroke-width="0.5"/>
+      <circle cx="150" cy="150" r="60"  fill="none" stroke="#0a1825" stroke-width="0.5"/>
+
+      <!-- Tick marks -->
+      <g id="compassTicks"></g>
+
+      <!-- Rose group (rotates in HEAD UP) -->
+      <g id="roseGroup">
+        <text x="150" y="16"  text-anchor="middle" dominant-baseline="central" fill="#3af"  font-size="13" font-family="Courier New" font-weight="900">N</text>
+        <text x="150" y="287" text-anchor="middle" dominant-baseline="central" fill="#7ab"  font-size="11" font-family="Courier New" font-weight="700">S</text>
+        <text x="287" y="150" text-anchor="middle" dominant-baseline="central" fill="#7ab"  font-size="11" font-family="Courier New" font-weight="700">E</text>
+        <text x="13"  y="150" text-anchor="middle" dominant-baseline="central" fill="#7ab"  font-size="11" font-family="Courier New" font-weight="700">W</text>
+        <text x="258" y="42"  text-anchor="middle" dominant-baseline="central" fill="#4a6a8a" font-size="9" font-family="Courier New">NE</text>
+        <text x="258" y="258" text-anchor="middle" dominant-baseline="central" fill="#4a6a8a" font-size="9" font-family="Courier New">SE</text>
+        <text x="42"  y="258" text-anchor="middle" dominant-baseline="central" fill="#4a6a8a" font-size="9" font-family="Courier New">SW</text>
+        <text x="42"  y="42"  text-anchor="middle" dominant-baseline="central" fill="#4a6a8a" font-size="9" font-family="Courier New">NW</text>
+      </g>
+
+      <!-- Fixed up-arrow indicator -->
+      <polygon id="upIndicator" points="150,6 145,18 155,18" fill="#ffe066" opacity="0.8"/>
+
+      <!-- Heading dashed line -->
+      <line id="hdgLine" x1="150" y1="150" x2="150" y2="22"
+            stroke="#ffe06650" stroke-width="1.2" stroke-dasharray="5,4"/>
+
+      <!-- ── VESSEL GROUP (rotates for NORTH UP, fixed for HEAD UP) ── -->
+      <g id="vesselGroup" transform="rotate(0,150,150)">
+        <!-- Hull body -->
+        <path d="M150,120 L157,132 L157,176 L143,176 L143,132 Z"
+              fill="#0d2540" stroke="#2a6aaa" stroke-width="1.5"/>
+        <!-- Bow -->
+        <polygon points="150,118 157,132 143,132"
+                 fill="#0a1e33" stroke="#2a6aaa" stroke-width="1.5"/>
+        <!-- Superstructure -->
+        <rect x="144" y="155" width="12" height="14" rx="1"
+              fill="#0f2d48" stroke="#2a6aaa" stroke-width="1"/>
+        <!-- Centerline -->
+        <line x1="150" y1="120" x2="150" y2="178"
+              stroke="#1a3a5a" stroke-width="0.5" stroke-dasharray="3,3"/>
+        <!-- Scale marks -->
+        <circle cx="150" cy="135" r="1.5" fill="#3a6a9a"/>
+        <circle cx="150" cy="150" r="1.5" fill="#3a6a9a"/>
+        <line x1="145" y1="165" x2="155" y2="165" stroke="#3a6a9a" stroke-width="0.8"/>
+        <text x="150" y="113" text-anchor="middle" fill="#4af"
+              font-size="7" font-family="Courier New" font-weight="bold">BOW</text>
+
+        <!-- ── BEARING VECTOR (absolute direction from pilot) ── -->
+        <!-- drawn in vessel-group coords; angle adjusted by heading -->
+        <line id="vLine" x1="150" y1="165" x2="150" y2="165"
+              stroke="#3effa0" stroke-width="2.5" stroke-linecap="round"/>
+        <polygon id="vHead" points="150,165 150,165 150,165" fill="#3effa0"/>
+
+        <!-- Pilot dot -->
+        <circle cx="150" cy="165" r="5" fill="#ffdd00" stroke="#fff" stroke-width="1.2"/>
+        <circle cx="150" cy="165" r="2" fill="#fff"/>
+        <text x="150" y="184" text-anchor="middle" fill="#ffdd00"
+              font-size="6.5" font-family="Courier New" font-weight="bold">PILOT</text>
+      </g>
+
+      <!-- Overlays (always on top) -->
+      <text id="hdgReadout" x="8"   y="294" fill="#ffe066" font-size="9"
+            font-family="Courier New" font-weight="bold">HDG: ---°</text>
+      <text id="modeLabel"  x="150" y="294" text-anchor="middle" fill="#4af"
+            font-size="8" font-family="Courier New">NORTH UP</text>
+      <text id="svgLabel"   x="292" y="294" text-anchor="end" fill="#3effa0"
+            font-size="9" font-family="Courier New" font-weight="bold">0.0kn ---°</text>
+    </svg>
+  </div>
+</div>
+
+<!-- Accuracy -->
+<div class="acc-row">
+  <div class="acc-box" id="accBox">
+    <div class="acc-lbl">GPS ACCURACY</div>
+    <div class="acc-val" id="accVal">--</div>
+  </div>
+  <div class="acc-box">
+    <div class="acc-lbl">DISTANCE</div>
+    <div class="acc-val" id="distVal">0 m</div>
+  </div>
+</div>
+
+<div class="timeout-banner" id="timeoutBanner">
+  ⏱ AUTO-STOP IN <span id="timeoutCount">5</span> MIN — tap to reset
+</div>
+<div class="banner warn-banner" id="warnBanner"></div>
+
+<div class="controls">
+  <button class="btn-main btn-start" id="mainBtn" onclick="startTracking()">▶ START GPS</button>
+  <button class="btn-reset" onclick="resetData()">RESET</button>
+</div>
+
+<div class="status-row">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusTxt">STANDBY</span>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────
+const ACC_LIMIT      = 30;
+const AUTO_STOP_MS   = 30 * 60 * 1000;
+const WARN_BEFORE_MS =  5 * 60 * 1000;
+const AVG_WINDOW_SEC = 10;   // 10-second rolling average for speed
+const MAX_SPD_REF    = 3.0;  // knots: full-length vector
+const MAX_VEC_LEN    = 58;   // px
+const MIN_VEC_LEN    = 5;    // px minimum visible
+
+// ── State ──────────────────────────────────────────────────────
+let watchId         = null;
+let totalDist       = 0;
+let lastPos         = null;
+let vesselHdg       = null;
+let currentSpd      = 0;    // instantaneous (knots)
+let currentBrg      = null; // absolute GPS bearing (°True)
+let displayMode     = 'north';
+let lastActivityTime= Date.now();
+let autoStopTimer   = null;
+
+// Speed history for 10-second rolling average
+// Each entry: { ts: timestamp_ms, kn: speed_knots }
+let speedHistory    = [];
+
+// ── Helpers ────────────────────────────────────────────────────
+const CARDS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+function toCard(d){ return CARDS[Math.round(((d%360)+360)%360/22.5)%16]; }
+function msToKnots(ms){ return ms * 3600 / 1852; }
+function haversine(a,b,c,d){
+  const R=6371000,dL=(c-a)*Math.PI/180,dO=(d-b)*Math.PI/180;
+  const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dO/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function toDegMin(dec,isLat){
+  const abs=Math.abs(dec),deg=Math.floor(abs),min=(abs-deg)*60;
+  const h=isLat?(dec>=0?'N':'S'):(dec>=0?'E':'W');
+  return `${deg}° ${min.toFixed(3)}' ${h}`;
+}
+function pad3(n){ return String(Math.round(((n%360)+360)%360)).padStart(3,'0'); }
+
+// ── 10-second rolling average speed ───────────────────────────
+function pushSpeed(kn){
+  const now = Date.now();
+  speedHistory.push({ts: now, kn});
+  // Purge entries older than AVG_WINDOW_SEC
+  speedHistory = speedHistory.filter(e => now - e.ts <= AVG_WINDOW_SEC * 1000);
+}
+function avgSpeed(){
+  if(speedHistory.length === 0) return null;
+  const sum = speedHistory.reduce((a,e)=>a+e.kn, 0);
+  return sum / speedHistory.length;
+}
+
+// ── Draw compass ticks ─────────────────────────────────────────
+(function(){
+  const g=document.getElementById('compassTicks'), cx=150, cy=150;
+  for(let i=0;i<72;i++){
+    const a=i*5, maj=a%90===0, med=a%30===0, is10=a%10===0;
+    const r1=130, r2=maj?113:med?118:is10?122:126;
+    const rad=(a-90)*Math.PI/180;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',cx+r1*Math.cos(rad)); l.setAttribute('y1',cy+r1*Math.sin(rad));
+    l.setAttribute('x2',cx+r2*Math.cos(rad)); l.setAttribute('y2',cy+r2*Math.sin(rad));
+    l.setAttribute('stroke',maj?'#4af':med?'#2a5a8a':is10?'#1a3a5a':'#111e2a');
+    l.setAttribute('stroke-width',maj?'2':med?'1.2':'0.8');
+    g.appendChild(l);
+  }
+})();
+
+// ── Display Mode ───────────────────────────────────────────────
+function setMode(mode){
+  displayMode = mode;
+  document.getElementById('btnNorthUp').className='mode-btn'+(mode==='north'?' active':'');
+  document.getElementById('btnHeadUp' ).className='mode-btn'+(mode==='head' ?' active':'');
+  document.getElementById('modeLabel').textContent  = mode==='north'?'NORTH UP':'HEAD UP';
+  document.getElementById('diagramTitle').textContent =
+    mode==='north'
+      ? 'VESSEL PLAN VIEW · NORTH UP · SPEED & BEARING VECTOR'
+      : 'VESSEL PLAN VIEW · HEAD UP · SPEED & BEARING VECTOR';
+  renderDiagram();
+  resetActivity();
+}
+
+// ── Core diagram renderer ──────────────────────────────────────
+function renderDiagram(){
+  const hdg = vesselHdg !== null ? vesselHdg : 0;
+
+  if(displayMode === 'north'){
+    // Rose fixed (N=top). Vessel rotates by HDG.
+    document.getElementById('roseGroup'  ).setAttribute('transform','rotate(0,150,150)');
+    document.getElementById('vesselGroup').setAttribute('transform',`rotate(${hdg},150,150)`);
+    const rad=(hdg-90)*Math.PI/180;
+    const ex=150+128*Math.cos(rad), ey=150+128*Math.sin(rad);
+    document.getElementById('hdgLine').setAttribute('x2',ex);
+    document.getElementById('hdgLine').setAttribute('y2',ey);
+  } else {
+    // HEAD UP: Rose rotates −HDG so HDG faces top. Vessel always 0°.
+    document.getElementById('roseGroup'  ).setAttribute('transform',`rotate(${-hdg},150,150)`);
+    document.getElementById('vesselGroup').setAttribute('transform','rotate(0,150,150)');
+    document.getElementById('hdgLine').setAttribute('x2',150);
+    document.getElementById('hdgLine').setAttribute('y2',22);
+  }
+
+  document.getElementById('hdgReadout').textContent =
+    vesselHdg!==null ? `HDG: ${pad3(vesselHdg)}°` : 'HDG: ---°';
+
+  if(currentBrg !== null) drawVector(currentSpd, currentBrg);
+  else clearVector();
+}
+
+// ── Bearing vector ─────────────────────────────────────────────
+// The vector lives INSIDE vesselGroup.
+// vesselGroup is rotated by 'hdg' (NORTH UP) or 0 (HEAD UP).
+// We want the vector to point at absolute bearing 'brgDeg'.
+// In vessel-group local coords: bow=up(-y), so:
+//   angle_in_group = brgDeg - hdg_applied_to_group
+// NORTH UP: group rotated by hdg → local angle = brgDeg - hdg
+// HEAD UP:  group rotated by 0  → local angle = brgDeg - hdg  (same! because rose rotated instead)
+// So in both cases: relAngle = brgDeg - hdg
+function drawVector(speedKn, brgDeg){
+  const hdg = vesselHdg !== null ? vesselHdg : 0;
+
+  // Vector length proportional to speed
+  let len = 0;
+  if(speedKn > 0.02){
+    len = Math.min(speedKn / MAX_SPD_REF, 1.4) * MAX_VEC_LEN;
+    len = Math.max(len, MIN_VEC_LEN);
+  }
+
+  // Direction in vessel-group local space
+  const relDeg = brgDeg - hdg;
+  const rad    = relDeg * Math.PI / 180;
+  const dx = Math.sin(rad) * len;
+  const dy = -Math.cos(rad) * len;   // SVG y inverted
+
+  const px=150, py=165;
+  const ex=px+dx, ey=py+dy;
+
+  // Shaft
+  const vl=document.getElementById('vLine');
+  vl.setAttribute('x1',px); vl.setAttribute('y1',py);
+  vl.setAttribute('x2',ex); vl.setAttribute('y2',ey);
+
+  // Arrowhead
+  if(len > 3){
+    const hLen=Math.max(5, len*0.22), ang=Math.atan2(dy,dx);
+    const a1x=ex-hLen*Math.cos(ang-0.42), a1y=ey-hLen*Math.sin(ang-0.42);
+    const a2x=ex-hLen*Math.cos(ang+0.42), a2y=ey-hLen*Math.sin(ang+0.42);
+    document.getElementById('vHead').setAttribute('points',`${ex},${ey} ${a1x},${a1y} ${a2x},${a2y}`);
+  } else {
+    document.getElementById('vHead').setAttribute('points','150,165 150,165 150,165');
+  }
+
+  // Color: speed-based
+  const col = speedKn < 0.5 ? '#3effa0'
+            : speedKn < 1.5 ? '#ffe066'
+            : speedKn < 2.5 ? '#ff9944'
+            :                  '#ff3333';
+  vl.setAttribute('stroke', col);
+  document.getElementById('vHead').setAttribute('fill', col);
+
+  // SVG bottom label
+  const bStr = `${pad3(brgDeg)}°(${toCard(brgDeg)})`;
+  document.getElementById('svgLabel').textContent = `${speedKn.toFixed(1)}kn ${bStr}`;
+  document.getElementById('svgLabel').setAttribute('fill', col);
+}
+
+function clearVector(){
+  document.getElementById('vLine').setAttribute('x2',150);
+  document.getElementById('vLine').setAttribute('y2',165);
+  document.getElementById('vHead').setAttribute('points','150,165 150,165 150,165');
+  document.getElementById('svgLabel').textContent='0.0kn ---°';
+  document.getElementById('svgLabel').setAttribute('fill','#3effa0');
+}
+
+// ── Heading ────────────────────────────────────────────────────
+function applyHeading(){
+  const v=parseFloat(document.getElementById('hdgInput').value);
+  if(!isNaN(v)&&v>=0&&v<=360){
+    vesselHdg = v % 360;
+    document.getElementById('clrBtn').style.display='inline-block';
+    renderDiagram();
+  }
+  resetActivity();
+}
+function clearHeading(){
+  vesselHdg=null;
+  document.getElementById('hdgInput').value='';
+  document.getElementById('clrBtn').style.display='none';
+  renderDiagram();
+  resetActivity();
+}
+document.getElementById('hdgInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') applyHeading();
+});
+
+// ── Auto-stop ──────────────────────────────────────────────────
+function resetActivity(){
+  lastActivityTime=Date.now();
+  document.getElementById('timeoutBanner').style.display='none';
+  if(watchId && document.getElementById('statusDot').classList.contains('warn')){
+    document.getElementById('statusDot').className='status-dot on';
+    document.getElementById('statusTxt').textContent='GPS ACTIVE · 1 SEC UPDATE';
+    document.getElementById('statusTxt').style.color='#3effa0';
+  }
+}
+function startAutoStop(){
+  clearAutoStop();
+  autoStopTimer=setInterval(()=>{
+    if(!watchId) return;
+    const rem=AUTO_STOP_MS-(Date.now()-lastActivityTime);
+    if(rem<=0){ clearAutoStop(); stopTracking(true); return; }
+    if(rem<=WARN_BEFORE_MS){
+      const m=Math.ceil(rem/60000);
+      document.getElementById('timeoutBanner').style.display='block';
+      document.getElementById('timeoutCount').textContent=m;
+      document.getElementById('statusDot').className='status-dot warn';
+      document.getElementById('statusTxt').textContent=`AUTO-STOP IN ${m} MIN`;
+      document.getElementById('statusTxt').style.color='#ffcc44';
+    }
+  }, 30000);
+}
+function clearAutoStop(){
+  if(autoStopTimer){clearInterval(autoStopTimer);autoStopTimer=null;}
+}
+document.addEventListener('touchstart',()=>{if(watchId)resetActivity();},{passive:true});
+document.addEventListener('click',()=>{if(watchId)resetActivity();});
+
+// ── GPS callbacks ──────────────────────────────────────────────
+function onPosition(pos){
+  resetActivity();
+  const{latitude:lat,longitude:lon,speed:spd,bearing:brng,accuracy:acc}=pos.coords;
+
+  // Position
+  document.getElementById('latVal').textContent=toDegMin(lat,true);
+  document.getElementById('lonVal').textContent=toDegMin(lon,false);
+
+  // Accuracy gate
+  document.getElementById('accVal').textContent=acc!=null?`±${Math.round(acc)} m`:'--';
+  const accBox=document.getElementById('accBox');
+  if(acc>ACC_LIMIT){
+    accBox.classList.add('warn');
+    showWarn(`⚠ Accuracy ${Math.round(acc)} m > limit (${ACC_LIMIT} m) — data ignored`);
+    return;
+  }
+  accBox.classList.remove('warn');
+  document.getElementById('warnBanner').style.display='none';
+
+  // ── Speed (instantaneous) ──────────────────────────────────
+  // GPS provides coords.speed in m/s (Doppler-derived on modern devices).
+  // We convert to knots. The 10-sec rolling average smooths short spikes.
+  const kn = (spd!=null && spd>=0) ? msToKnots(spd) : 0;
+  currentSpd = kn;
+  pushSpeed(kn);
+
+  const avg = avgSpeed();
+  const displaySpd = avg !== null ? avg : kn;
+
+  const sEl=document.getElementById('spdVal');
+  sEl.textContent = displaySpd.toFixed(1);
+  sEl.className   = 'card-val' + (displaySpd>0.05?' on-spd':'');
+
+  // Show instant as sub-label
+  document.getElementById('spdAvg').textContent =
+    `INST: ${kn.toFixed(1)} kn`;
+
+  // ── Bearing (absolute, from GPS) ──────────────────────────
+  // GPS bearing = direction of motion measured clockwise from True North.
+  // This is the ABSOLUTE bearing of vessel movement as seen from the pilot's
+  // standing position (which moves with the vessel).
+  if(brng!=null){
+    // Show bearing whenever GPS provides it (regardless of speed)
+    const deg=Math.round(brng+360)%360;
+    currentBrg=deg;
+    document.getElementById('brgVal').textContent=pad3(deg);
+    document.getElementById('brgVal').className='card-val on-brg';
+    document.getElementById('brgCard').textContent=toCard(deg);
+    drawVector(kn, deg);
+  } else if(currentBrg !== null && kn > 0.05){
+    // No new bearing from GPS but still moving — keep last bearing, update vector length
+    drawVector(kn, currentBrg);
+  } else if(kn <= 0.01){
+    // Essentially stopped and no bearing
+    clearVector();
+  }
+
+  // Distance
+  if(lastPos){
+    totalDist+=haversine(lastPos.lat,lastPos.lon,lat,lon);
+    document.getElementById('distVal').textContent=
+      totalDist>=1000?`${(totalDist/1000).toFixed(2)} km`:`${Math.round(totalDist)} m`;
+  }
+  lastPos={lat,lon};
+}
+
+function onError(err){
+  // TIMEOUT (code 3): GPS cold-start taking long — retry with lower accuracy
+  if(err.code === 3){
+    showWarn('⏳ GPS acquiring signal... retrying with lower accuracy.');
+    // Clear current watch and retry without high-accuracy (faster first fix)
+    if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+    watchId = navigator.geolocation.watchPosition(onPosition, onErrorFinal,
+      {enableHighAccuracy:false, timeout:60000, maximumAge:10000});
+    return;
+  }
+  // PERMISSION DENIED (code 1)
+  if(err.code === 1){
+    showWarn('❌ Location permission denied. Please allow GPS in browser settings.');
+    setStatus(false); stopTracking(false); return;
+  }
+  // POSITION UNAVAILABLE (code 2)
+  showWarn('❌ GPS signal unavailable. Move to open sky and retry.');
+  setStatus(false); stopTracking(false);
+}
+function onErrorFinal(err){
+  const msgs = {
+    1: 'Location permission denied.',
+    2: 'GPS signal unavailable — move to open sky.',
+    3: 'GPS timeout — signal too weak. Try outdoors.'
+  };
+  showWarn('❌ ' + (msgs[err.code] || err.message || 'Location access failed'));
+  setStatus(false); stopTracking(false);
+}
+function showWarn(msg){
+  const b=document.getElementById('warnBanner');
+  b.style.display='block'; b.textContent=msg;
+}
+
+// ── Status / Start / Stop ──────────────────────────────────────
+function setStatus(on, auto){
+  const dot=document.getElementById('statusDot');
+  const txt=document.getElementById('statusTxt');
+  dot.className='status-dot'+(on?' on':'');
+  txt.textContent=on?'GPS ACTIVE · 1 SEC UPDATE':(auto?'AUTO-STOPPED (30 min idle)':'STANDBY');
+  txt.style.color=on?'#3effa0':'#3a5a72';
+}
+function startTracking(){
+  if(!navigator.geolocation){showWarn('❌ Geolocation not supported');return;}
+  document.getElementById('warnBanner').style.display='none';
+  document.getElementById('timeoutBanner').style.display='none';
+  lastActivityTime=Date.now();
+  watchId=navigator.geolocation.watchPosition(onPosition,onError,
+    {enableHighAccuracy:true,timeout:60000,maximumAge:5000});
+  setStatus(true);
+  startAutoStop();
+  const b=document.getElementById('mainBtn');
+  b.textContent='■ STOP GPS'; b.className='btn-main btn-stop'; b.onclick=()=>stopTracking(false);
+}
+function stopTracking(auto=false){
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  clearAutoStop();
+  document.getElementById('timeoutBanner').style.display='none';
+  setStatus(false,auto);
+  if(auto) showWarn('⏱ GPS auto-stopped after 30 min. Tap START to resume.');
+  const b=document.getElementById('mainBtn');
+  b.textContent='▶ START GPS'; b.className='btn-main btn-start'; b.onclick=startTracking;
+}
+function resetData(){
+  totalDist=0; lastPos=null; currentSpd=0; currentBrg=null; speedHistory=[];
+  ['distVal'].forEach(id=>document.getElementById(id).textContent='0 m');
+  document.getElementById('spdVal').textContent='0.0';
+  document.getElementById('spdVal').className='card-val';
+  document.getElementById('spdAvg').textContent='10s AVG: -- kn';
+  document.getElementById('brgVal').textContent='---';
+  document.getElementById('brgVal').className='card-val';
+  document.getElementById('brgCard').textContent='--';
+  document.getElementById('latVal').textContent="--° --.- '";
+  document.getElementById('lonVal').textContent="--° --.- '";
+  document.getElementById('accVal').textContent='--';
+  clearVector();
+  resetActivity();
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
